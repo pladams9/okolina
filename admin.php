@@ -1,10 +1,18 @@
 <?php
 
 /**
- * Primary Logic
+ * CONSTANTS
  */
 
-// Check for form submission (POST) data
+define('TEST_USERNAME', 'test_user');
+define('WORLD_SIZE_X', 4);
+define('WORLD_SIZE_Y', 4);
+
+/**
+ * PRIMARY PAGE LOGIC
+ */
+
+// Check for form submission (POST) data first
 if (isset($_POST["setup"])) {
   // Run Setup
   $results = runSetup();
@@ -12,12 +20,12 @@ if (isset($_POST["setup"])) {
   header('Location: admin.php?result=' . urlencode($results));
 }
 
-// Start the page
+// If we've gotten here, then we need to build the page
 displayHeader();
 
 // Check for results (GET) data
 if (isset($_GET["result"])) {
-  // Result data exists = Run setup & display result message
+  // Result data exists = Display result message
   displayResults();
 }
 else {
@@ -28,9 +36,8 @@ else {
 // End the page
 displayFooter();
 
-
 /**
- * Page Display Functions
+ * PAGE DISPALY FUNCTIONS
  */
 
 /* Displays header */
@@ -76,17 +83,27 @@ function displayResults() {
   ?>
   <p>Everything is done. Thank you.</p>
   <p>Results:</p>
+  <?php echo '<p>' . htmlspecialchars($_GET["result"]) . '</p>'; ?>
+  <a href="admin.php">Return to Admin Options</a>
 
   <?php
-  echo '<p>' . htmlspecialchars($_GET["result"]) . '</p>';
 }
 
 /**
- * Setup Functions
+ * SETUP FUNCTIONS
  */
 
- function runSetup() {
-   return 'It worked.';
- }
+/* Meat of this page. Runs the setup based on POST-ed options */
+function runSetup() {
+  // Open Database Connection
+  // DROP any existing Okolina DB
+  // CREATE Okolina DB
+  // CREATE TABLE users
+  // CREATE TABLE rooms
+  // INSERT test user
+  // Generate/INSERT test rooms
+
+  return TEST_USERNAME;
+}
 
 ?>
