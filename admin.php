@@ -100,22 +100,50 @@ function displayResults() {
 
 /* Meat of this page. Runs the setup based on POST-ed options */
 function runSetup() {
-  // Open Database Connection
+  // Open database connection
   $okolina_db = new mysqli(DB_HOST, DB_USER, DB_PASS);
   if ($okolina_db->connect_errno) {
     return 'Database Connection Error: (' . $okolina_db->connect_errno . ') ' . $okolina_db->connect_error;
   }
 
-  // Check if DB_NAME already exists
-  if(!$okolina_db->query("DROP DATABASE IF EXISTS " . DB_NAME)) {
+  // DROP DB_NAME if it exists
+  if(!$okolina_db->query('DROP DATABASE IF EXISTS ' . DB_NAME)) {
     return 'Error dropping DB "' . DB_NAME . '". (' . $okolina_db->errno . ') ' . $okolina_db->error;
   }
-  // CREATE Okolina DB
-  // CREATE TABLE users
-  // CREATE TABLE rooms
+  // Build new database
+  if(
+    !$okolina_db->query('CREATE DATABASE ' . DB_NAME) ||
+    !$okolina_db->query('USE ' . DB_NAME) ||
+    !$okolina_db->query('CREATE TABLE users (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        username VARCHAR(255) NOT NULL UNIQUE,
+                        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                        )') ||
+    !$okolina_db->query('CREATE TABLE rooms (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        x_pos INT,
+                        y_pos INT,
+                        UNIQUE KEY pos (x_pos, y_pos)
+                      )') ||
+    !$okolina_db->query('CREATE TABLE user_details (
+                        user_id INT NOT NULL,
+                        current_room_id INT NOT NULL,
+                        FOREIGN KEY(user_id) REFERENCES users(id),
+                        FOREIGN KEY(current_room_id) REFERENCES rooms(id)
+                        )')
+  ) {
+    return 'Error building DB "' . DB_NAME . '". (' . $okolina_db->errno . ') ' . $okolina_db->error;
+  }
+
   // INSERT test user
+  if(!$okolina_db->query('INSERT INTO users (username) VALUES ("' . TEST_USERNAME . '")')) {
+    return 'Error adding test user: (' . $okolina_db->errno . ') ' . $okolina_db->error;
+  }
+
   // Generate/INSERT test rooms
+
   // Close Database Connection
+  $okolina_db->close();
 
   return 'Reached the end of runSetup().';
 }
