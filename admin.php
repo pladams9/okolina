@@ -1,4 +1,12 @@
 <?php
+/*******************************************************************************
+ * admin.php
+ *
+ * This is the setup page for Okolina. DROPS any current Okolina database and
+ * then builds a new one complete with all appropriate tables and initial data.
+ *
+ * Currently adds a test user and a small number of bland rooms.
+ ******************************************************************************/
 
 /**
  * CONSTANTS
