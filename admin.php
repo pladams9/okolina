@@ -12,13 +12,14 @@ define('DB_NAME', 'okolina');
 define('TEST_USERNAME', 'test_user');
 define('WORLD_SIZE_X', 4);
 define('WORLD_SIZE_Y', 4);
+define('DEFAULT_ROOM_COLOR', '#11FF66');
 
 /**
  * PRIMARY PAGE LOGIC
  */
 
 // Check for form submission (POST) data first
-if (isset($_POST["setup"])) {
+if (isset($_POST['setup'])) {
   // Run Setup
   $results = runSetup();
   // Redirect to confirmation
@@ -29,7 +30,7 @@ if (isset($_POST["setup"])) {
 displayHeader();
 
 // Check for results (GET) data
-if (isset($_GET["result"])) {
+if (isset($_GET['result'])) {
   // Result data exists = Display result message
   displayResults();
 }
@@ -88,7 +89,7 @@ function displayResults() {
   ?>
   <p>Everything is done. Thank you.</p>
   <p>Results:</p>
-  <?php echo '<code>' . htmlspecialchars($_GET["result"]) . '</code>'; ?>
+  <?php echo '<code>' . htmlspecialchars($_GET['result']) . '</code>'; ?>
   <p><a href="admin.php">Return to Admin Options</a></p>
 
   <?php
@@ -123,6 +124,7 @@ function runSetup() {
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         x_pos INT,
                         y_pos INT,
+                        color VARCHAR(7) DEFAULT \'' . DEFAULT_ROOM_COLOR . '\',
                         UNIQUE KEY pos (x_pos, y_pos)
                       )') ||
     !$okolina_db->query('CREATE TABLE user_details (
@@ -135,12 +137,22 @@ function runSetup() {
     return 'Error building DB "' . DB_NAME . '". (' . $okolina_db->errno . ') ' . $okolina_db->error;
   }
 
-  // INSERT test user
-  if(!$okolina_db->query('INSERT INTO users (username) VALUES ("' . TEST_USERNAME . '")')) {
-    return 'Error adding test user: (' . $okolina_db->errno . ') ' . $okolina_db->error;
+  // Generate/INSERT test rooms
+  for ($y = 0; $y < WORLD_SIZE_Y; $y++) {
+    for ($x = 0; $x < WORLD_SIZE_X; $x++) {
+      if (!$okolina_db->query("INSERT INTO rooms (x_pos, y_pos, color) VALUES ($x, $y, 'DEFAULT_ROOM_COLOR')")) {
+        return "Error adding room at ($x, $y): ($okolina_db->errno) $okolina_db->error";
+      }
+    }
   }
 
-  // Generate/INSERT test rooms
+  // INSERT test user
+  if(
+    !$okolina_db->query('INSERT INTO users (username) VALUES (\'' . TEST_USERNAME . '\')') ||
+    !$okolina_db->query('INSERT INTO user_details (user_id, current_room_id) VALUES (1, 1)')
+  ) {
+    return 'Error adding test user: (' . $okolina_db->errno . ') ' . $okolina_db->error;
+  }
 
   // Close Database Connection
   $okolina_db->close();
