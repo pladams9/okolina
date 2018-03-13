@@ -17,13 +17,13 @@ const OKOLINA_WIDTH = '800px';
 const PLAY_AREA_WIDTH = '600px';
 const CONTROL_AREA_WIDTH = '200px';
 
+
 /**
  * GLOBALS
  */
 
-var divOkolina;
+var Okolina = {};
 
-var user = '';
 
 /**
  * APPLICATION FLOW (Start Here)
@@ -33,14 +33,10 @@ window.onload = function() {
   // Setup stage
   okolinaSetup();
 
-  while (true) {
-    // Login stage
-    okolinaLogin();
-
-    // Game stage
-    okolinaPlay();
-  }
+  // Login stage
+  Login();
 };
+
 
 /**
  * STAGE FUNCTIONS
@@ -48,20 +44,42 @@ window.onload = function() {
 
 /* Build okolina area into #okolina-content */
 function okolinaSetup() {
-  divOkolina = document.getElementById('okolina-content');
-  divOkolina.style.width = OKOLINA_WIDTH;
-  divOkolina.style.height = OKOLINA_HEIGHT;
-  divOkolina.style.margin = '0 auto';
-  divOkolina.style.border = '1px solid grey';
+  // Okolina defaults
+  Okolina.user = '';
+
+  // Page Setup
+  Okolina.divMain = document.getElementById('okolina-content');
+  Okolina.divMain.style.width = OKOLINA_WIDTH;
+  Okolina.divMain.style.height = OKOLINA_HEIGHT;
+  Okolina.divMain.style.margin = '0 auto';
+  Okolina.divMain.style.border = '1px solid grey';
 }
 
-function okolinaLogin() {
-  // Ask for username; store in JS
+function Login() {
+  // Ask for username
+  Okolina.user = prompt('Enter username:', '');
+
   // Validate user login through AJAX
+  var ajax = new XMLHttpRequest();
+
+  // Prep for response
+  ajax.onreadystatechange = function() {
+    if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
+      // The request has returned (DONE) succesfully (200)
+      console.log(ajax.responseText);
+
+      // If it's good, move on to GameSetup
+      //setTimeout(GameSetup);
+    }
+  };
+  // Actually make request
+  ajax.open('POST', 'ajax.php', true);
+  ajax.setRequestHeader('Content-Type', 'application/json');
+  ajax.send(JSON.stringify({ action : 'login', user : Okolina.user }));
 }
 
-function okolinaPlay() {
-  /* Setup play area */
+/* Setup play area and then start game loop*/
+function GameSetup() {
   var divPlayArea, divControlArea;
   divPlayArea = document.createElement('div');
   divPlayArea.style.float = 'left';
@@ -73,10 +91,15 @@ function okolinaPlay() {
   divControlArea.style.width = CONTROL_AREA_WIDTH;
   divControlArea.style.height = OKOLINA_HEIGHT;
 
-  divOkolina.appendChild(divPlayArea);
-  divOkolina.appendChild(divControlArea);
+  Okolina.divMain.appendChild(divPlayArea);
+  Okolina.divMain.appendChild(divControlArea);
 
-  /* Game Loop */
+  // Start game loop
+  setTimeout(GameLoop);
+}
+
+/* Game Loop */
+function GameLoop() {
   // Request current room (with user name for server to validate)
   // Incorrect login = return and go back to login stage
   // Correct login = Display room
@@ -86,9 +109,19 @@ function okolinaPlay() {
   // Display room color
   // Display buttons for moving (as appropriate)
 
-  /* Clean up play area */
-  divOkolina.removeChild(divPlayArea);
-  divOkolina.removeChild(divControlArea);
+  // Call cleanup if we're done
+
+  // ...or call the GameLoop again  <<<-------------------------THIS COULD USE SOME SERIOUS THINKING
+  //setTimeout(GameLoop);
+}
+
+/* Clean up play area */
+function GameCleanup() {
+  Okolina.divMain.removeChild(divPlayArea);
+  Okolina.divMain.removeChild(divControlArea);
+
+  // Return to the login screen
+  setTimeout(okolinaLogin);
 }
 
 
