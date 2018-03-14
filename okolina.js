@@ -60,52 +60,39 @@ function Login() {
   Okolina.user = prompt('Enter username:', '');
 
   // Validate user login through AJAX
-  var ajax = new XMLHttpRequest();
-
-  // Prep for response
-  ajax.onreadystatechange = function() {
-    if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
-      // The request has returned (DONE) succesfully (200)
-      var result = JSON.parse(ajax.responseText);
-      if (result[0] == 'error') {
-        console.log(result[1]);
-        setTimeout(Login);
+  AJAXRequest('login', Okolina.user,
+    function(result) {
+      if (result[1] == 'login_accepted') {
+        console.log('Login successful.');
+        setTimeout(GameSetup); // Move on
       }
       else {
-        if (result[1] == 'login_accepted') {
-          console.log('Login successful.');
-          setTimeout(GameSetup); // Move on
-        }
-        else {
-          console.log('Login failed.');
-          setTimeout(Login); // Try again
-        }
+        console.log('Login failed.');
+        setTimeout(Login); // Try again
       }
-    }
-  };
-  // Actually make request
-  ajax.open('POST', 'ajax.php', true);
-  ajax.setRequestHeader('Content-Type', 'application/json');
-  ajax.send(JSON.stringify({ action : 'login', user : Okolina.user }));
+    },
+    function(result) {
+      console.log(result[1]);
+      setTimeout(Login);
+    });
 }
 
 /* Setup play area and then start game loop*/
 function GameSetup() {
-  var divPlayArea, divControlArea;
-  divPlayArea = document.createElement('div');
-  divPlayArea.style.float = 'left';
-  divPlayArea.style.width = PLAY_AREA_WIDTH;
-  divPlayArea.style.height = OKOLINA_HEIGHT;
-  divPlayArea.appendChild(document.createTextNode('Play area'));
+  Okolina.divPlayArea = document.createElement('div');
+  Okolina.divPlayArea.style.float = 'left';
+  Okolina.divPlayArea.style.width = PLAY_AREA_WIDTH;
+  Okolina.divPlayArea.style.height = OKOLINA_HEIGHT;
+  Okolina.divPlayArea.appendChild(document.createTextNode('Username = ' + Okolina.user));
 
-  divControlArea = document.createElement('div');
-  divControlArea.style.float = 'left';
-  divControlArea.style.width = CONTROL_AREA_WIDTH;
-  divControlArea.style.height = OKOLINA_HEIGHT;
-  divControlArea.appendChild(document.createTextNode('Controls area'));
+  Okolina.divControlArea = document.createElement('div');
+  Okolina.divControlArea.style.float = 'left';
+  Okolina.divControlArea.style.width = CONTROL_AREA_WIDTH;
+  Okolina.divControlArea.style.height = OKOLINA_HEIGHT;
+  Okolina.divControlArea.appendChild(document.createTextNode('Controls area'));
 
-  Okolina.divMain.appendChild(divPlayArea);
-  Okolina.divMain.appendChild(divControlArea);
+  Okolina.divMain.appendChild(Okolina.divPlayArea);
+  Okolina.divMain.appendChild(Okolina.divControlArea);
 
   // Start game loop
   setTimeout(GameLoop);
@@ -113,7 +100,17 @@ function GameSetup() {
 
 /* Game Loop */
 function GameLoop() {
-  // Request current room (with user name for server to validate)
+  // Request current room
+  AJAXRequest('get_room', '',
+    function(result) {
+      console.log(result[1]);
+      Okolina.divPlayArea.style.backgroundColor = result[1];
+    },
+    function(result) {
+      console.log(result[1]);
+    });
+
+
   // Incorrect login = return and go back to login stage
   // Correct login = Display room
 
@@ -134,7 +131,35 @@ function GameCleanup() {
   Okolina.divMain.removeChild(divControlArea);
 
   // Return to the login screen
-  setTimeout(okolinaLogin);
+  setTimeout(Login);
+}
+
+/**
+ * FUNCTIONS
+ */
+
+/* AJAX Requests */
+function AJAXRequest(action, data, success, failure) {
+  var ajax = new XMLHttpRequest();
+
+  // All AJAX requests are sent by POST through ajax.php
+  ajax.open('POST', 'ajax.php', true);
+
+  // Prepare for response
+  ajax.onreadystatechange = function() {
+    // If the request has returned (DONE) succesfully (200)
+    if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
+      var result = JSON.parse(ajax.responseText);
+      // If there was an error, run failure callback
+      if (result[0] == 0) failure(result);
+      // Otherwise, run the success callback
+      else success(result);
+    }
+  };
+
+  // Send the request
+  ajax.setRequestHeader('Content-Type', 'application/json');
+  ajax.send(JSON.stringify({ action : action, data : data }));
 }
 
 

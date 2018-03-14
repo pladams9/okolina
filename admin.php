@@ -147,7 +147,7 @@ function runSetup() {
   // Generate/INSERT test rooms
   for ($y = 0; $y < WORLD_SIZE_Y; $y++) {
     for ($x = 0; $x < WORLD_SIZE_X; $x++) {
-      if (!$okolina_db->query("INSERT INTO rooms (x_pos, y_pos, color) VALUES ($x, $y, 'DEFAULT_ROOM_COLOR')")) {
+      if (!$okolina_db->query("INSERT INTO rooms (x_pos, y_pos, color) VALUES ($x, $y, '#" . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT) . "')")) {
         return "Error adding room at ($x, $y): ($okolina_db->errno) $okolina_db->error";
       }
     }
