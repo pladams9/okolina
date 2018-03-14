@@ -12,10 +12,9 @@
  * CONSTANTS
  */
 
-define('DB_HOST', '127.0.0.1');
+require_once('db-config.php');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'okolina');
 
 define('TEST_USERNAME', 'test_user');
 define('WORLD_SIZE_X', 4);

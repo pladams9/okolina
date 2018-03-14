@@ -66,10 +66,21 @@ function Login() {
   ajax.onreadystatechange = function() {
     if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
       // The request has returned (DONE) succesfully (200)
-      console.log(ajax.responseText);
-
-      // If it's good, move on to GameSetup
-      //setTimeout(GameSetup);
+      var result = JSON.parse(ajax.responseText);
+      if (result[0] == 'error') {
+        console.log(result[1]);
+        setTimeout(Login);
+      }
+      else {
+        if (result[1] == 'login_accepted') {
+          console.log('Login successful.');
+          setTimeout(GameSetup); // Move on
+        }
+        else {
+          console.log('Login failed.');
+          setTimeout(Login); // Try again
+        }
+      }
     }
   };
   // Actually make request
@@ -85,11 +96,13 @@ function GameSetup() {
   divPlayArea.style.float = 'left';
   divPlayArea.style.width = PLAY_AREA_WIDTH;
   divPlayArea.style.height = OKOLINA_HEIGHT;
+  divPlayArea.appendChild(document.createTextNode('Play area'));
 
   divControlArea = document.createElement('div');
   divControlArea.style.float = 'left';
   divControlArea.style.width = CONTROL_AREA_WIDTH;
   divControlArea.style.height = OKOLINA_HEIGHT;
+  divControlArea.appendChild(document.createTextNode('Controls area'));
 
   Okolina.divMain.appendChild(divPlayArea);
   Okolina.divMain.appendChild(divControlArea);
