@@ -83,8 +83,7 @@ function ExitRoom($direction) {
   // Find current x,y of player
   $q = 'SELECT x_pos, y_pos FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
-        JOIN users ON users.id=user_details.user_id
-        WHERE users.username=\'' . $_SESSION['user'] . '\';';
+        WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
   $res = QueryDB($q);
   if($res[0] == SUCCESS) {
     $row = $res[1]->fetch_row();
