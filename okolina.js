@@ -110,10 +110,6 @@ function GameLoop() {
       console.log(result[1]);
     });
 
-
-  // Incorrect login = return and go back to login stage
-  // Correct login = Display room
-
   // Display room
   // Display room coordinates
   // Display room color
@@ -149,6 +145,7 @@ function AJAXRequest(action, data, success, failure) {
   ajax.onreadystatechange = function() {
     // If the request has returned (DONE) succesfully (200)
     if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
+      console.log(ajax.responseText);
       var result = JSON.parse(ajax.responseText);
       // If there was an error, run failure callback
       if (result[0] == 0) failure(result);

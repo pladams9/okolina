@@ -13,8 +13,6 @@
  */
 
 require_once('db-config.php');
-define('DB_USER', 'root');
-define('DB_PASS', '');
 
 define('TEST_USERNAME', 'test_user');
 define('WORLD_SIZE_X', 4);
