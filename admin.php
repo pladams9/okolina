@@ -133,7 +133,7 @@ function runSetup() {
                         UNIQUE KEY pos (x_pos, y_pos)
                       )') ||
     !$okolina_db->query('CREATE TABLE user_details (
-                        user_id INT NOT NULL,
+                        user_id INT PRIMARY KEY,
                         current_room_id INT NOT NULL,
                         FOREIGN KEY(user_id) REFERENCES users(id),
                         FOREIGN KEY(current_room_id) REFERENCES rooms(id)
