@@ -29,18 +29,8 @@ var Okolina = {};
  * APPLICATION FLOW (Start Here)
  */
 
-window.onload = function() {
-  // Setup stage
-  okolinaSetup();
-
-  // Login stage
-  Login();
-};
-
-
-/**
- * STAGE FUNCTIONS
- */
+/* Start with thes setup */
+window.onload = okolinaSetup;
 
 /* Build okolina area into #okolina-content */
 function okolinaSetup() {
@@ -53,6 +43,8 @@ function okolinaSetup() {
   Okolina.divMain.style.height = OKOLINA_HEIGHT;
   Okolina.divMain.style.margin = '0 auto';
   Okolina.divMain.style.border = '1px solid grey';
+
+  setTimeout(Login);
 }
 
 function Login() {
@@ -77,48 +69,72 @@ function Login() {
     });
 }
 
-/* Setup play area and then start game loop*/
+/* Setup play area */
 function GameSetup() {
   Okolina.divPlayArea = document.createElement('div');
   Okolina.divPlayArea.style.float = 'left';
   Okolina.divPlayArea.style.width = PLAY_AREA_WIDTH;
   Okolina.divPlayArea.style.height = OKOLINA_HEIGHT;
-  Okolina.divPlayArea.appendChild(document.createTextNode('Username = ' + Okolina.user));
+  Okolina.divPlayArea.style.color = 'white';
 
   Okolina.divControlArea = document.createElement('div');
   Okolina.divControlArea.style.float = 'left';
   Okolina.divControlArea.style.width = CONTROL_AREA_WIDTH;
   Okolina.divControlArea.style.height = OKOLINA_HEIGHT;
-  Okolina.divControlArea.appendChild(document.createTextNode('Controls area'));
+
+  Okolina.controls = {};
+  Okolina.controls.buttonNorth = document.createElement('button');
+  Okolina.controls.buttonNorth.appendChild(document.createTextNode('North'));
+  Okolina.controls.buttonSouth = document.createElement('button');
+  Okolina.controls.buttonSouth.appendChild(document.createTextNode('South'));
+  Okolina.controls.buttonWest = document.createElement('button');
+  Okolina.controls.buttonWest.appendChild(document.createTextNode('West'));
+  Okolina.controls.buttonEast = document.createElement('button');
+  Okolina.controls.buttonEast.appendChild(document.createTextNode('East'));
+  Okolina.divControlArea.appendChild(Okolina.controls.buttonNorth);
+  Okolina.divControlArea.appendChild(Okolina.controls.buttonSouth);
+  Okolina.divControlArea.appendChild(Okolina.controls.buttonWest);
+  Okolina.divControlArea.appendChild(Okolina.controls.buttonEast);
+
+  Okolina.controls.buttonNorth.onclick = function(){ ExitRoom('north') };
+  Okolina.controls.buttonSouth.onclick = function(){ ExitRoom('south') };
+  Okolina.controls.buttonWest.onclick = function(){ ExitRoom('west') };
+  Okolina.controls.buttonEast.onclick = function(){ ExitRoom('east') };
 
   Okolina.divMain.appendChild(Okolina.divPlayArea);
   Okolina.divMain.appendChild(Okolina.divControlArea);
 
   // Start game loop
-  setTimeout(GameLoop);
+  setTimeout(LoadRoom);
 }
 
-/* Game Loop */
-function GameLoop() {
+/* Load Room */
+function LoadRoom() {
   // Request current room
   AJAXRequest('get_room', '',
     function(result) {
       console.log(result[1]);
-      Okolina.divPlayArea.style.backgroundColor = result[1];
+      Okolina.divPlayArea.style.backgroundColor = result[1][2];
+      Okolina.divPlayArea.innerHTML = (
+        '<p>Username = ' + Okolina.user +
+        '</p><p>Room coordinates: (' + result[1][0] + ', ' + result[1][1] + ')</p>'
+      );
     },
     function(result) {
       console.log(result[1]);
     });
+}
 
-  // Display room
-  // Display room coordinates
-  // Display room color
-  // Display buttons for moving (as appropriate)
-
-  // Call cleanup if we're done
-
-  // ...or call the GameLoop again  <<<-------------------------THIS COULD USE SOME SERIOUS THINKING
-  //setTimeout(GameLoop);
+/* Exit Room */
+function ExitRoom(dir) {
+  // Request current room
+  AJAXRequest('exit_room', dir,
+    function(result) {
+      setTimeout(LoadRoom);
+    },
+    function(result) {
+      console.log(result[1]);
+    });
 }
 
 /* Clean up play area */

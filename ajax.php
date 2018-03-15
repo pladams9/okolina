@@ -39,6 +39,7 @@ switch($request['action']) {
     break;
   case 'exit_room':
     $result = ExitRoom($request['data']);
+    break;
   default:
     $result = array(FAILURE, 'No matching action');
 }
@@ -50,11 +51,13 @@ echo json_encode($result);
  */
 
 function Login($user) {
-  $q = 'SELECT COUNT(*) FROM users WHERE username=\'' . $user . '\';';
+  $q = 'SELECT user_id FROM user_details
+        JOIN users ON users.id = user_details.user_id
+        WHERE username=\'' . $user . '\';';
   $res = QueryDB($q);
   if($res[0] == SUCCESS) {
-    if($res[1]->fetch_row()[0] == 1) {
-      $_SESSION['user'] = $user;
+    if($res[1]->num_rows == 1) {
+      $_SESSION['user_id'] = $res[1]->fetch_row()[0];
       return array(SUCCESS, 'login_accepted');
     }
     else return array(SUCCESS, 'login_denied');
@@ -63,13 +66,12 @@ function Login($user) {
 }
 
 function GetRoom() {
-  $q = 'SELECT color FROM rooms
+  $q = 'SELECT x_pos, y_pos, color FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
-        JOIN users ON users.id=user_details.user_id
-        WHERE users.username=\'' . $_SESSION['user'] . '\';';
+        WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
   $res = QueryDB($q);
   if($res[0] == SUCCESS) {
-    return array(SUCCESS, $res[1]->fetch_row()[0]);
+    return array(SUCCESS, $res[1]->fetch_row());
   }
   else return $res;
 }
@@ -79,7 +81,7 @@ function ExitRoom($direction) {
   $y = 0;
 
   // Find current x,y of player
-  $q = 'SELECT pos_x, pos_y FROM rooms
+  $q = 'SELECT x_pos, y_pos FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
         JOIN users ON users.id=user_details.user_id
         WHERE users.username=\'' . $_SESSION['user'] . '\';';
@@ -91,18 +93,35 @@ function ExitRoom($direction) {
   }
   else return $res;
 
-  // Figure out new coordinates based on $direction <<<---------------------- TODO
-  // $x = new;
-  // $y = new;
+  // Figure out new coordinates based on $direction
+  switch ($direction) {
+    case 'north':
+      $y -= 1;
+      break;
+    case 'south':
+      $y += 1;
+      break;
+    case 'west':
+      $x -= 1;
+      break;
+    case 'east':
+      $x += 1;
+      break;
+  }
 
   // Get new room id (if it exists)
   $q = "SELECT id FROM rooms
-        WHERE pos_x=$x && pos_y=$y";
+        WHERE x_pos=$x && y_pos=$y";
   $res = QueryDB($q);
   if($res[0] == SUCCESS) {
     if($res[1]->num_rows == 0) return array(WARNING, 'room_missing');
     else {
-      // Update user_details and report success <<<---------------- TODO
+      // Update user_details and report success
+      $new_room = $res[1]->fetch_row()[0];
+      $q = "UPDATE user_details SET current_room_id=$new_room WHERE user_id=" . $_SESSION['user_id'];
+      $res = QueryDB($q);
+      if ($res[0] == SUCCESS) return array(SUCCESS, 'room_updated');
+      else return $res;
     }
   }
   else return $res;
