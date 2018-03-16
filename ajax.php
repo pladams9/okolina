@@ -6,10 +6,15 @@
  ******************************************************************************/
 
 /**
- * CONSTANTS
+ * DATABASE
  */
 
-require_once('db-config.php');
+require_once('inc/db_access.php');
+$db = new OkolinaDB();
+$res = $db->open();
+if($res[0] == 0) return $res;
+unset($res);
+
 
 /**
  * CONSTANTS
@@ -18,6 +23,7 @@ require_once('db-config.php');
 define('FAILURE', 0);
 define('SUCCESS', 1);
 define('WARNING', 2);
+
 
 /**
  * HANDLE REQUESTS
@@ -44,6 +50,7 @@ switch($request['action']) {
     $result = array(FAILURE, 'No matching action');
 }
 echo json_encode($result);
+return;
 
 
 /**
@@ -51,10 +58,11 @@ echo json_encode($result);
  */
 
 function Login($user) {
+  global $db;
   $q = 'SELECT user_id FROM user_details
         JOIN users ON users.id = user_details.user_id
         WHERE username=\'' . $user . '\';';
-  $res = QueryDB($q);
+  $res = $db->query($q);
   if($res[0] == SUCCESS) {
     if($res[1]->num_rows == 1) {
       $_SESSION['user_id'] = $res[1]->fetch_row()[0];
@@ -66,10 +74,11 @@ function Login($user) {
 }
 
 function GetRoom() {
+  global $db;
   $q = 'SELECT x_pos, y_pos, color FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
         WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
-  $res = QueryDB($q);
+  $res = $db->query($q);
   if($res[0] == SUCCESS) {
     return array(SUCCESS, $res[1]->fetch_row());
   }
@@ -77,6 +86,7 @@ function GetRoom() {
 }
 
 function ExitRoom($direction) {
+  global $db;
   $x = 0;
   $y = 0;
 
@@ -84,7 +94,7 @@ function ExitRoom($direction) {
   $q = 'SELECT x_pos, y_pos FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
         WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
-  $res = QueryDB($q);
+  $res = $db->query($q);
   if($res[0] == SUCCESS) {
     $row = $res[1]->fetch_row();
     $x = $row[0];
@@ -111,14 +121,14 @@ function ExitRoom($direction) {
   // Get new room id (if it exists)
   $q = "SELECT id FROM rooms
         WHERE x_pos=$x && y_pos=$y";
-  $res = QueryDB($q);
+  $res = $db->query($q);
   if($res[0] == SUCCESS) {
     if($res[1]->num_rows == 0) return array(WARNING, 'room_missing');
     else {
       // Update user_details and report success
       $new_room = $res[1]->fetch_row()[0];
       $q = "UPDATE user_details SET current_room_id=$new_room WHERE user_id=" . $_SESSION['user_id'];
-      $res = QueryDB($q);
+      $res = $db->query($q);
       if ($res[0] == SUCCESS) return array(SUCCESS, 'room_updated');
       else return $res;
     }

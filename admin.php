@@ -12,7 +12,7 @@
  * CONSTANTS
  */
 
-require_once('db-config.php');
+require_once('inc/db_access.php');
 
 define('TEST_USERNAME', 'test_user');
 define('WORLD_SIZE_X', 4);
