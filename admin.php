@@ -48,7 +48,7 @@ else {
 displayFooter();
 
 /**
- * PAGE DISPALY FUNCTIONS
+ * PAGE DISPLAY FUNCTIONS
  */
 
 /* Displays header */
