@@ -43,7 +43,6 @@ function okolinaSetup() {
   Okolina.divMain.style.height = OKOLINA_HEIGHT + 'px';
   Okolina.divMain.style.margin = '0 auto';
   Okolina.divMain.style.border = '1px solid grey';
-  Okolina.divMain.style.backgroundColor = 'black';
 
   setTimeout(Login);
 }
@@ -76,12 +75,15 @@ function GameSetup() {
   Okolina.PlayArea.width = PLAY_AREA_WIDTH;
   Okolina.PlayArea.height = OKOLINA_HEIGHT;
   Okolina.PlayArea.style.float = 'left';
+  Okolina.PlayArea.style.backgroundColor = '#003';
   Okolina.ctx = Okolina.PlayArea.getContext('2d');
 
   Okolina.divControlArea = document.createElement('div');
   Okolina.divControlArea.style.float = 'left';
   Okolina.divControlArea.style.width = CONTROL_AREA_WIDTH + 'px';
   Okolina.divControlArea.style.height = OKOLINA_HEIGHT + 'px';
+  Okolina.divControlArea.style.textAlign = 'center';
+  Okolina.divControlArea.style.paddingTop = '2em';
 
   Okolina.controls = {};
   Okolina.controls.buttonNorth = document.createElement('button');
@@ -92,10 +94,13 @@ function GameSetup() {
   Okolina.controls.buttonWest.appendChild(document.createTextNode('West'));
   Okolina.controls.buttonEast = document.createElement('button');
   Okolina.controls.buttonEast.appendChild(document.createTextNode('East'));
+
   Okolina.divControlArea.appendChild(Okolina.controls.buttonNorth);
-  Okolina.divControlArea.appendChild(Okolina.controls.buttonSouth);
+  Okolina.divControlArea.insertAdjacentHTML('beforeend', '<br>');
   Okolina.divControlArea.appendChild(Okolina.controls.buttonWest);
   Okolina.divControlArea.appendChild(Okolina.controls.buttonEast);
+  Okolina.divControlArea.insertAdjacentHTML('beforeend', '<br>');
+  Okolina.divControlArea.appendChild(Okolina.controls.buttonSouth);
 
   Okolina.controls.buttonNorth.onclick = function(){ ExitRoom('north') };
   Okolina.controls.buttonSouth.onclick = function(){ ExitRoom('south') };
@@ -108,6 +113,10 @@ function GameSetup() {
   // Set initial color for room
   Okolina.room = {};
   Okolina.room.color = '#ffffff';
+
+  // Load tiles
+  Okolina.tiles = new Image();
+  Okolina.tiles.src = 'img/tiles.svg';
 
   // Start game loop
   setTimeout(LoadRoom);
@@ -124,6 +133,9 @@ function LoadRoom() {
       Okolina.room.color = result[1].color;
       Okolina.room.x = result[1].x_pos;
       Okolina.room.y = result[1].y_pos;
+      Okolina.room.width = result[1].room_width;
+      Okolina.room.height = result[1].room_height;
+      Okolina.room.data = result[1].room_data;
     },
     function(result) {
       console.log(result[1]);
@@ -155,16 +167,35 @@ function GameCleanup() {
 function DrawStep(t) {
   requestAnimationFrame(DrawStep);
 
+  // Draw rectangle
+  Okolina.ctx.clearRect(0, 0, PLAY_AREA_WIDTH, OKOLINA_HEIGHT);
   Okolina.ctx.fillStyle = Okolina.room.color;
   Okolina.ctx.fillRect(PLAY_AREA_WIDTH * 0.1, OKOLINA_HEIGHT * 0.1, PLAY_AREA_WIDTH * 0.8, OKOLINA_HEIGHT * 0.8);
+
+  // Draw tiles
+  function drawTile(tileX, tileY, x, y) {
+    Okolina.ctx.drawImage(
+      Okolina.tiles,
+      (tileX * 75), (tileY * 100),
+      50, 75,
+      x, y,
+      50, 75
+    );
+  }
+
+  for (var j = 0; j < Okolina.room.width; j++) {
+    for (var k = 0; k < Okolina.room.height; k++) {
+      drawTile(Okolina.room.data[j + (k * Okolina.room.width)], 0, 25 + (j * 50), 25 + (k * 50));
+    }
+  }
+
+  // Draw text
   Okolina.ctx.fillStyle = 'white';
   Okolina.ctx.font = '25px monospace';
   Okolina.ctx.fillText(
     'Coordinates: (' + Okolina.room.x + ', ' + Okolina.room.y + ')',
-    PLAY_AREA_WIDTH * 0.2,
-    (OKOLINA_HEIGHT * 0.2) + 25,
-    PLAY_AREA_WIDTH * 0.6
-  )
+    25, OKOLINA_HEIGHT - 15
+  );
 }
 
 /**
@@ -182,7 +213,6 @@ function AJAXRequest(action, data, success, failure) {
   ajax.onreadystatechange = function() {
     // If the request has returned (DONE) succesfully (200)
     if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
-      console.log(ajax.responseText);
       var result = JSON.parse(ajax.responseText);
       // If there was an error, run failure callback
       if (result[0] == 0) failure(result);
