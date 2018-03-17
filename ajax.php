@@ -80,7 +80,11 @@ function GetRoom() {
         WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
   $res = $db->query($q);
   if($res[0] == SUCCESS) {
-    return array(SUCCESS, $res[1]->fetch_row());
+    $row = $res[1]->fetch_row();
+    $ret_data['x_pos'] = $row[0];
+    $ret_data['y_pos'] = $row[1];
+    $ret_data['color'] = $row[2];
+    return array(SUCCESS, $ret_data);
   }
   else return $res;
 }
