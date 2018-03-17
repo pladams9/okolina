@@ -12,10 +12,10 @@
  * CONSTANTS
  */
 
-const OKOLINA_HEIGHT = '500px';
-const OKOLINA_WIDTH = '800px';
-const PLAY_AREA_WIDTH = '600px';
-const CONTROL_AREA_WIDTH = '200px';
+const OKOLINA_HEIGHT = 500;
+const OKOLINA_WIDTH = 800;
+const PLAY_AREA_WIDTH = 600;
+const CONTROL_AREA_WIDTH = 200;
 
 
 /**
@@ -39,10 +39,11 @@ function okolinaSetup() {
 
   // Page Setup
   Okolina.divMain = document.getElementById('okolina-content');
-  Okolina.divMain.style.width = OKOLINA_WIDTH;
-  Okolina.divMain.style.height = OKOLINA_HEIGHT;
+  Okolina.divMain.style.width = OKOLINA_WIDTH + 'px';
+  Okolina.divMain.style.height = OKOLINA_HEIGHT + 'px';
   Okolina.divMain.style.margin = '0 auto';
   Okolina.divMain.style.border = '1px solid grey';
+  Okolina.divMain.style.backgroundColor = 'black';
 
   setTimeout(Login);
 }
@@ -71,16 +72,16 @@ function Login() {
 
 /* Setup play area */
 function GameSetup() {
-  Okolina.divPlayArea = document.createElement('div');
-  Okolina.divPlayArea.style.float = 'left';
-  Okolina.divPlayArea.style.width = PLAY_AREA_WIDTH;
-  Okolina.divPlayArea.style.height = OKOLINA_HEIGHT;
-  Okolina.divPlayArea.style.color = 'white';
+  Okolina.PlayArea = document.createElement('canvas');
+  Okolina.PlayArea.width = PLAY_AREA_WIDTH;
+  Okolina.PlayArea.height = OKOLINA_HEIGHT;
+  Okolina.PlayArea.style.float = 'left';
+  Okolina.ctx = Okolina.PlayArea.getContext('2d');
 
   Okolina.divControlArea = document.createElement('div');
   Okolina.divControlArea.style.float = 'left';
-  Okolina.divControlArea.style.width = CONTROL_AREA_WIDTH;
-  Okolina.divControlArea.style.height = OKOLINA_HEIGHT;
+  Okolina.divControlArea.style.width = CONTROL_AREA_WIDTH + 'px';
+  Okolina.divControlArea.style.height = OKOLINA_HEIGHT + 'px';
 
   Okolina.controls = {};
   Okolina.controls.buttonNorth = document.createElement('button');
@@ -101,11 +102,17 @@ function GameSetup() {
   Okolina.controls.buttonWest.onclick = function(){ ExitRoom('west') };
   Okolina.controls.buttonEast.onclick = function(){ ExitRoom('east') };
 
-  Okolina.divMain.appendChild(Okolina.divPlayArea);
+  Okolina.divMain.appendChild(Okolina.PlayArea);
   Okolina.divMain.appendChild(Okolina.divControlArea);
+
+  // Set initial color for room
+  Okolina.room = {};
+  Okolina.room.color = '#ffffff';
 
   // Start game loop
   setTimeout(LoadRoom);
+  // Start draw loop
+  requestAnimationFrame(DrawStep);
 }
 
 /* Load Room */
@@ -114,11 +121,9 @@ function LoadRoom() {
   AJAXRequest('get_room', '',
     function(result) {
       console.log(result[1]);
-      Okolina.divPlayArea.style.backgroundColor = result[1][2];
-      Okolina.divPlayArea.innerHTML = (
-        '<p>Username = ' + Okolina.user +
-        '</p><p>Room coordinates: (' + result[1][0] + ', ' + result[1][1] + ')</p>'
-      );
+      Okolina.room.color = result[1].color;
+      Okolina.room.x = result[1].x_pos;
+      Okolina.room.y = result[1].y_pos;
     },
     function(result) {
       console.log(result[1]);
@@ -139,11 +144,27 @@ function ExitRoom(dir) {
 
 /* Clean up play area */
 function GameCleanup() {
-  Okolina.divMain.removeChild(divPlayArea);
+  Okolina.divMain.removeChild(PlayArea);
   Okolina.divMain.removeChild(divControlArea);
 
   // Return to the login screen
   setTimeout(Login);
+}
+
+/* Draw Step */
+function DrawStep(t) {
+  requestAnimationFrame(DrawStep);
+
+  Okolina.ctx.fillStyle = Okolina.room.color;
+  Okolina.ctx.fillRect(PLAY_AREA_WIDTH * 0.1, OKOLINA_HEIGHT * 0.1, PLAY_AREA_WIDTH * 0.8, OKOLINA_HEIGHT * 0.8);
+  Okolina.ctx.fillStyle = 'white';
+  Okolina.ctx.font = '25px monospace';
+  Okolina.ctx.fillText(
+    'Coordinates: (' + Okolina.room.x + ', ' + Okolina.room.y + ')',
+    PLAY_AREA_WIDTH * 0.2,
+    (OKOLINA_HEIGHT * 0.2) + 25,
+    PLAY_AREA_WIDTH * 0.6
+  )
 }
 
 /**
