@@ -23,7 +23,7 @@ $output = HandleRequest($request);
 
 // Tag on any warnings from PHP
 $pm = ob_get_contents();
-if ($pm != '') $output['php_messages'] = $pm;
+if ($pm != '') $output['debug'] = $pm; // Comment this out to suppress warnings
 ob_end_clean();
 
 // Output
