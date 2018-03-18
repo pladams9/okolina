@@ -8,8 +8,8 @@
 /**
  * INCLUDES
  */
-require_once 'inc/constants.php';
-require_once 'inc/db_access.php';
+require_once __DIR__ . '/../constants.php';
+require_once __DIR__ . '/../db_access.php';
 
 
 /**

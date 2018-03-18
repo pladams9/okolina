@@ -18,7 +18,7 @@ ob_start();
 $request = json_decode(file_get_contents('php://input'), true);
 
 // Handle the request
-require 'inc/ajax/requests.php';
+require __DIR__ . '/inc/ajax/requests.php';
 $output = HandleRequest($request);
 
 // Tag on any warnings from PHP
