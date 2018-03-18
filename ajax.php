@@ -6,26 +6,6 @@
  ******************************************************************************/
 
 /**
- * DATABASE
- */
-
-require_once('inc/db_access.php');
-$db = new OkolinaDB();
-$res = $db->open();
-if($res[0] == 0) return $res;
-unset($res);
-
-
-/**
- * CONSTANTS
- */
-
-define('FAILURE', 0);
-define('SUCCESS', 1);
-define('WARNING', 2);
-
-
-/**
  * HANDLE REQUESTS
  */
 
