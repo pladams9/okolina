@@ -12,13 +12,17 @@ require_once 'constants.php';
 
 
 /**
- * CLASS OkolinaDB
+ * DB INFO
  */
 define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'okolina');
 
+
+/**
+ * CLASS OkolinaDB
+ */
 class OkolinaDB {
   private static $conn;
   private static $isOpen = false;
@@ -38,19 +42,21 @@ class OkolinaDB {
       // Query
       if($result = self::$conn->query($query)) {
         return array(
-          'msg' => array(SUCCESS, 'Query Successful.'),
+          'msg' => array(SUCCESS, 'query_successful'),
           'data' => $result
         );
       }
       else {
         return array(
-          'msg' => array(FAILURE, 'Error querying DB. (' . self::$conn->errno . ') ' . self::$conn->error)
+          'msg' => array(FAILURE, 'query_error'),
+          'data' => '(' . self::$conn->errno . ') ' . self::$conn->error
         );
       }
     }
     else {
       return array(
-        'msg' => array(FAILURE, 'DB Connection Error: (' . self::$conn->connect_errno . ') ' . self::$conn->connect_error)
+        'msg' => array(FAILURE, 'db_connection_error'),
+        'data' => '(' . self::$conn->connect_errno . ') ' . self::$conn->connect_error
       );
     }
   }

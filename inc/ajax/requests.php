@@ -25,8 +25,6 @@ function HandleRequest($request) {
     'exit_room' => 'ExitRoom',
   );
 
-
-
   return call_user_func($handlers[$request['action']], $request['data']);
 
 }
@@ -35,22 +33,26 @@ function HandleRequest($request) {
  * FUNCTIONS
  */
 
-function Login($user) {
+function Login($data) {
   $q = 'SELECT user_id FROM user_details
         JOIN users ON users.id = user_details.user_id
-        WHERE username=\'' . $user . '\';';
+        WHERE username=\'' . $data['user'] . '\';';
   $res = OkolinaDB::query($q);
   if($res['msg'][0] == SUCCESS) {
     if($res['data']->num_rows == 1) {
       $_SESSION['user_id'] = $res['data']->fetch_row()[0];
-      return array(SUCCESS, 'login_accepted');
+      return array(
+        'msg' => array(SUCCESS, 'login_accepted')
+      );
     }
-    else return array(SUCCESS, 'login_denied');
+    else return array(
+      'msg' => array(SUCCESS, 'login_denied')
+    );
   }
   else return $res;
 }
 
-function GetRoom() {
+function GetRoom($data) {
   $q = 'SELECT x_pos, y_pos, color FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
         WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
@@ -70,12 +72,15 @@ function GetRoom() {
       $ret_data['room_data'][] = mt_rand(0, 2);
     }
 
-    return array(SUCCESS, $ret_data);
+    return array(
+      'msg' => array(SUCCESS, 'room_loaded'),
+      'data' => $ret_data
+    );
   }
   else return $res;
 }
 
-function ExitRoom($direction) {
+function ExitRoom($data) {
   $x = 0;
   $y = 0;
 
@@ -92,7 +97,7 @@ function ExitRoom($direction) {
   else return $res;
 
   // Figure out new coordinates based on $direction
-  switch ($direction) {
+  switch ($data['direction']) {
     case 'north':
       $y -= 1;
       break;
@@ -112,13 +117,17 @@ function ExitRoom($direction) {
         WHERE x_pos=$x && y_pos=$y";
   $res = OkolinaDB::query($q);
   if($res['msg'][0] == SUCCESS) {
-    if($res['data']->num_rows == 0) return array(WARNING, 'room_missing');
+    if($res['data']->num_rows == 0) return array(
+      'msg' => array(WARNING, 'room_missing')
+    );
     else {
       // Update user_details and report success
       $new_room = $res['data']->fetch_row()[0];
       $q = "UPDATE user_details SET current_room_id=$new_room WHERE user_id=" . $_SESSION['user_id'];
       $res = OkolinaDB::query($q);
-      if ($res['msg'][0] == SUCCESS) return array(SUCCESS, 'room_updated');
+      if ($res['msg'][0] == SUCCESS) return array(
+        'msg' => array(SUCCESS, 'room_updated')
+      );
       else return $res;
     }
   }

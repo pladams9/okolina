@@ -52,9 +52,9 @@ function Login() {
   Okolina.user = prompt('Enter username:', '');
 
   // Validate user login through AJAX
-  AJAXRequest('login', Okolina.user,
+  AJAXRequest('login', { user : Okolina.user },
     function(result) {
-      if (result[1] == 'login_accepted') {
+      if (result['msg'][1] == 'login_accepted') {
         console.log('Login successful.');
         setTimeout(GameSetup); // Move on
       }
@@ -64,7 +64,7 @@ function Login() {
       }
     },
     function(result) {
-      console.log(result[1]);
+      console.log(result['data']);
       setTimeout(Login);
     });
 }
@@ -127,30 +127,30 @@ function GameSetup() {
 /* Load Room */
 function LoadRoom() {
   // Request current room
-  AJAXRequest('get_room', '',
+  AJAXRequest('get_room', {},
     function(result) {
-      console.log(result[1]);
-      Okolina.room.color = result[1].color;
-      Okolina.room.x = result[1].x_pos;
-      Okolina.room.y = result[1].y_pos;
-      Okolina.room.width = result[1].room_width;
-      Okolina.room.height = result[1].room_height;
-      Okolina.room.data = result[1].room_data;
+      console.log(result['data']);
+      Okolina.room.color = result['data'].color;
+      Okolina.room.x = result['data'].x_pos;
+      Okolina.room.y = result['data'].y_pos;
+      Okolina.room.width = result['data'].room_width;
+      Okolina.room.height = result['data'].room_height;
+      Okolina.room.data = result['data'].room_data;
     },
     function(result) {
-      console.log(result[1]);
+      console.log(result['data']);
     });
 }
 
 /* Exit Room */
 function ExitRoom(dir) {
   // Request current room
-  AJAXRequest('exit_room', dir,
+  AJAXRequest('exit_room', { direction : dir },
     function(result) {
       setTimeout(LoadRoom);
     },
     function(result) {
-      console.log(result[1]);
+      console.log(result['data']);
     });
 }
 
@@ -213,9 +213,11 @@ function AJAXRequest(action, data, success, failure) {
   ajax.onreadystatechange = function() {
     // If the request has returned (DONE) succesfully (200)
     if (ajax.readyState === XMLHttpRequest.DONE && ajax.status === 200) {
+      console.log(ajax.responseText);
       var result = JSON.parse(ajax.responseText);
+      console.log(result['msg']);
       // If there was an error, run failure callback
-      if (result[0] == 0) failure(result);
+      if (result['msg'][0] == 0) failure(result);
       // Otherwise, run the success callback
       else success(result);
     }
