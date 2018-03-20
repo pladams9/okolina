@@ -11,8 +11,8 @@ if($res['msg'][0] == SUCCESS) {
   $ret_data['biome'] = $row[2];
   $seed = $row[3]; // Don't need to send the seed back to the client
 
-  $ret_data['room_width'] = 11;
-  $ret_data['room_height'] = 8;
+  $ret_data['room_width'] = 30;
+  $ret_data['room_height'] = 20;
 
   // Generate room based on seed
   require_once(__DIR__ . '/../generate/room.php');

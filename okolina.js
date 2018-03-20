@@ -170,23 +170,37 @@ function DrawStep(t) {
 
   // Draw rectangle
   Okolina.ctx.clearRect(0, 0, PLAY_AREA_WIDTH, OKOLINA_HEIGHT);
-  Okolina.ctx.fillStyle = Okolina.room.color;
-  Okolina.ctx.fillRect(PLAY_AREA_WIDTH * 0.1, OKOLINA_HEIGHT * 0.1, PLAY_AREA_WIDTH * 0.8, OKOLINA_HEIGHT * 0.8);
 
   // Draw tiles
-  function drawTile(tileX, tileY, x, y) {
+  function drawTile(tileX, tileY, tileSize, x, y, offsetX, offsetY) {
     Okolina.ctx.drawImage(
       Okolina.tiles,
-      (tileX * 75), (tileY * 100),
-      50, 75,
-      x, y,
-      50, 75
+      (tileX * 96), (tileY * 128),
+      64, 96,
+      (offsetX + (x * tileSize)), (offsetY + (y * tileSize)),
+      tileSize, (1.5 * tileSize)
     );
   }
 
+  // Calc scale and offset
+  var margin = OKOLINA_HEIGHT * 0.05;
+  var offx, offy;
+  var eff_width = PLAY_AREA_WIDTH - (2 * margin);
+  var eff_height = OKOLINA_HEIGHT - (2 * margin);
+  var s;
+  if ((Okolina.room.width / Okolina.room.height) > (eff_width / eff_height)) {
+    s = eff_width / Okolina.room.width;
+    offx = margin;
+    offy = (OKOLINA_HEIGHT - (Okolina.room.height * s)) / 2;
+  }
+  else {
+    s = eff_height / Okolina.room.height;
+    offx = (PLAY_AREA_WIDTH - (Okolina.room.width * s)) / 2;
+    offy = margin;
+  }
   for (var j = 0; j < Okolina.room.width; j++) {
     for (var k = 0; k < Okolina.room.height; k++) {
-      drawTile(Okolina.room.data[j + (k * Okolina.room.width)], 0, 25 + (j * 50), 25 + (k * 50));
+      drawTile(Okolina.room.data[j + (k * Okolina.room.width)], 0, s, j, k, offx, offy);
     }
   }
 
