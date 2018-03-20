@@ -9,15 +9,19 @@
  ******************************************************************************/
 
 /**
+ * INCLUDES
+ */
+require_once('inc/db_access.php');
+require_once('inc/constants.php');
+
+
+/**
  * CONSTANTS
  */
-
-require_once('inc/db_access.php');
-
-define('TEST_USERNAME', 'test_user');
+define('TEST_USERNAME', 'test');
 define('WORLD_SIZE_X', 4);
 define('WORLD_SIZE_Y', 4);
-define('DEFAULT_ROOM_COLOR', '#11FF66');
+define('DEFAULT_ROOM_BIOME', 'grass');
 
 /**
  * PRIMARY PAGE LOGIC
@@ -106,63 +110,54 @@ function displayResults() {
 
 /* Meat of this page. Runs the setup based on POST-ed options */
 function runSetup() {
-  // Open database connection
-  $okolina_db = new mysqli(DB_HOST, DB_USER, DB_PASS);
-  if ($okolina_db->connect_errno) {
-    return 'Database Connection Error: (' . $okolina_db->connect_errno . ') ' . $okolina_db->connect_error;
-  }
+  /* Queue up the queries first */
 
-  // DROP DB_NAME if it exists
-  if(!$okolina_db->query('DROP DATABASE IF EXISTS ' . DB_NAME)) {
-    return 'Error dropping DB "' . DB_NAME . '". (' . $okolina_db->errno . ') ' . $okolina_db->error;
-  }
-  // Build new database
-  if(
-    !$okolina_db->query('CREATE DATABASE ' . DB_NAME) ||
-    !$okolina_db->query('USE ' . DB_NAME) ||
-    !$okolina_db->query('CREATE TABLE users (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        username VARCHAR(255) NOT NULL UNIQUE,
-                        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-                        )') ||
-    !$okolina_db->query('CREATE TABLE rooms (
-                        id INT AUTO_INCREMENT PRIMARY KEY,
-                        x_pos INT,
-                        y_pos INT,
-                        color VARCHAR(7) DEFAULT \'' . DEFAULT_ROOM_COLOR . '\',
-                        UNIQUE KEY pos (x_pos, y_pos)
-                      )') ||
-    !$okolina_db->query('CREATE TABLE user_details (
-                        user_id INT PRIMARY KEY,
-                        current_room_id INT NOT NULL,
-                        FOREIGN KEY(user_id) REFERENCES users(id),
-                        FOREIGN KEY(current_room_id) REFERENCES rooms(id)
-                        )')
-  ) {
-    return 'Error building DB "' . DB_NAME . '". (' . $okolina_db->errno . ') ' . $okolina_db->error;
-  }
+  // Build DB
+  $q[] = 'DROP DATABASE IF EXISTS ' . DB_NAME;
+  $q[] = 'CREATE DATABASE ' . DB_NAME;
+  $q[] = 'USE ' . DB_NAME;
+  $q[] = 'CREATE TABLE users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW()
+          )';
+  $q[] = "CREATE TABLE rooms (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            x_pos INT NOT NULL,
+            y_pos INT NOT NULL,
+            biome VARCHAR(50) DEFAULT '" . DEFAULT_ROOM_BIOME . "',
+            seed INT UNSIGNED DEFAULT 0,
+            UNIQUE KEY pos (x_pos, y_pos)
+          )";
+  $q[] = 'CREATE TABLE user_details (
+            user_id INT PRIMARY KEY,
+            current_room_id INT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            FOREIGN KEY(current_room_id) REFERENCES rooms(id)
+          )';
 
   // Generate/INSERT test rooms
   for ($y = 0; $y < WORLD_SIZE_Y; $y++) {
     for ($x = 0; $x < WORLD_SIZE_X; $x++) {
-      if (!$okolina_db->query("INSERT INTO rooms (x_pos, y_pos, color) VALUES ($x, $y, '#" . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT) . "')")) {
-        return "Error adding room at ($x, $y): ($okolina_db->errno) $okolina_db->error";
-      }
+      $r = mt_rand(0, mt_getrandmax());
+      $q[] = "INSERT INTO rooms (x_pos, y_pos, seed) VALUES ($x, $y, $r)";
     }
   }
 
   // INSERT test user
-  if(
-    !$okolina_db->query('INSERT INTO users (username) VALUES (\'' . TEST_USERNAME . '\')') ||
-    !$okolina_db->query('INSERT INTO user_details (user_id, current_room_id) VALUES (1, 1)')
-  ) {
-    return 'Error adding test user: (' . $okolina_db->errno . ') ' . $okolina_db->error;
+  $q[] = "INSERT INTO users (username) VALUES ('" . TEST_USERNAME . "')";
+  $q[] = 'INSERT INTO user_details (user_id, current_room_id) VALUES (1, 1)';
+
+  /* Run queries */
+  for($i = 0; $i < count($q); $i++) {
+    $res = OkolinaDB::query($q[$i]);
+    if($res['msg'][0] == FAILURE) return $res['data'];
   }
 
   // Close Database Connection
-  $okolina_db->close();
+  OkolinaDB::close();
 
-  return 'Reached the end of runSetup().';
+  return 'Setup completed successfully.';
 }
 
 ?>

@@ -136,6 +136,7 @@ function LoadRoom() {
       Okolina.room.width = result['data'].room_width;
       Okolina.room.height = result['data'].room_height;
       Okolina.room.data = result['data'].room_data;
+      Okolina.room.biome = result['data'].biome;
     },
     function(result) {
       console.log(result['data']);
