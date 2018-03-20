@@ -1,17 +1,35 @@
 <?php
 
-/*  Generate room based on seed */
-function GenerateRoom($seed, $width, $height) {
-  mt_srand($seed);
+/**
+ * INCLUDES
+ */
+require_once('noise.php');
 
+/*  Generate room based on seed */
+function GenerateRoom($seed, $biome, $width, $height) {
   // Our return data
   $room_data = array();
 
-  // Actual generation
-  $room_data = array();
-  $room_size = $width * $height;
-  for ($i = 0; $i < $room_size; $i++) {
-    $room_data[] = mt_rand(0, 2);
+  // Noise settings
+  $noise_period = 3; // TODO remove magic constant
+
+  // Weight table for terrain types
+  $types = array(1, 0); // Water -> Dirt -> Grass
+  $type_weight = array(40, 60);
+  $type_weight_total = array_sum($type_weight);
+
+  // Generate tiles
+  for ($j = 0; $j < $width; $j++) {
+    for ($k = 0; $k < $height; $k++) {
+      // Get noise value
+      $n = noiseInterpolated($j / $noise_period, $k / $noise_period, $seed) * $type_weight_total;
+      $t = 0;
+      while ($n > $type_weight[$t]) {
+        $n -= $type_weight[$t];
+        $t += 1;
+      }
+      $room_data[] = $types[$t];
+    }
   }
 
   return $room_data;
