@@ -2,10 +2,10 @@
 /*******************************************************************************
  * admin.php
  *
- * This is the setup page for Okolina. DROPS any current Okolina database and
+ * This is the setup page for Okolina. DROPS any current Okolina tables and
  * then builds a new one complete with all appropriate tables and initial data.
  *
- * Currently adds a test user and a small number of bland rooms.
+ * Currently adds a test user and a small number of rooms.
  ******************************************************************************/
 
 /**
@@ -110,12 +110,22 @@ function displayResults() {
 
 /* Meat of this page. Runs the setup based on POST-ed options */
 function runSetup() {
+  // Check if setup has already been completed
+  $res = OkolinaDB::query('SELECT value FROM okolina_info WHERE name="setup_complete"');
+  if ($res['msg'][0] == SUCCESS) {
+    $isAlreadySetup = $res['data']->fetch_row()[0];
+    if ($isAlreadySetup) return 'Setup completed previously. DROP all tables before running setup.';
+    else return 'Setup previously failed. DROP all tables before running setup again.';
+  }
+
+
   /* Queue up the queries first */
 
-  // Build DB
-  $q[] = 'DROP DATABASE IF EXISTS ' . DB_NAME;
-  $q[] = 'CREATE DATABASE ' . DB_NAME;
-  $q[] = 'USE ' . DB_NAME;
+  // Build tables
+  $q[] = 'CREATE TABLE okolina_info (
+            name VARCHAR(255) PRIMARY KEY,
+            value VARCHAR(255)
+          )';
   $q[] = 'CREATE TABLE users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             username VARCHAR(255) NOT NULL UNIQUE,
@@ -125,7 +135,7 @@ function runSetup() {
             id INT AUTO_INCREMENT PRIMARY KEY,
             x_pos INT NOT NULL,
             y_pos INT NOT NULL,
-            biome VARCHAR(50) DEFAULT '" . DEFAULT_ROOM_BIOME . "',
+            biome VARCHAR(255) DEFAULT '" . DEFAULT_ROOM_BIOME . "',
             seed INT UNSIGNED DEFAULT 0,
             UNIQUE KEY pos (x_pos, y_pos)
           )";
@@ -147,6 +157,9 @@ function runSetup() {
   // INSERT test user
   $q[] = "INSERT INTO users (username) VALUES ('" . TEST_USERNAME . "')";
   $q[] = 'INSERT INTO user_details (user_id, current_room_id) VALUES (1, 1)';
+
+  // Set setup_complete flag
+  $q[] = 'INSERT INTO okolina_info (name, value) VALUES ("setup_complete", "true")';
 
   /* Run queries */
   for($i = 0; $i < count($q); $i++) {

@@ -2,8 +2,8 @@
 
 $q = 'SELECT x_pos, y_pos, biome, seed FROM rooms
       JOIN user_details ON rooms.id=user_details.current_room_id
-      WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
-$res = OkolinaDB::query($q);
+      WHERE user_details.user_id=?';
+$res = OkolinaDB::query($q, $_SESSION['user_id']);
 if($res['msg'][0] == SUCCESS) {
   $row = $res['data']->fetch_row();
   $ret_data['x_pos'] = $row[0];

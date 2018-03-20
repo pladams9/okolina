@@ -35,12 +35,27 @@ class OkolinaDB {
     }
   }
 
-  public static function query($query) {
-    //Make sure the connection is open
+  public static function query($query, ...$params) {
+    // Make sure the connection is open
     self::open();
     if (self::$isOpen) {
-      // Query
-      if($result = self::$conn->query($query)) {
+      // Prepare statement
+      $stmt = self::$conn->prepare($query);
+
+      // Bind $params if necessary
+      if (count($params) > 0) {
+        $types = '';
+        for ($i = 0; $i < count($params); $i++) {
+          // List parameter types
+          $types .= 's';
+        }
+        // Bind parameters
+        $stmt->bind_param($types, ...$params);
+      }
+
+      // Run query
+      if($stmt->execute()) {
+        $result = $stmt->get_result();
         return array(
           'msg' => array(SUCCESS, 'query_successful'),
           'data' => $result

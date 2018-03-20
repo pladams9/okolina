@@ -36,8 +36,8 @@ function HandleRequest($request) {
 function Login($data) {
   $q = 'SELECT user_id FROM user_details
         JOIN users ON users.id = user_details.user_id
-        WHERE username=\'' . $data['user'] . '\';';
-  $res = OkolinaDB::query($q);
+        WHERE username=?';
+  $res = OkolinaDB::query($q, $data['user']);
   if($res['msg'][0] == SUCCESS) {
     if($res['data']->num_rows == 1) {
       $_SESSION['user_id'] = $res['data']->fetch_row()[0];
@@ -63,8 +63,8 @@ function ExitRoom($data) {
   // Find current x,y of player
   $q = 'SELECT x_pos, y_pos FROM rooms
         JOIN user_details ON rooms.id=user_details.current_room_id
-        WHERE user_details.user_id=\'' . $_SESSION['user_id'] . '\';';
-  $res = OkolinaDB::query($q);
+        WHERE user_details.user_id=?';
+  $res = OkolinaDB::query($q, $_SESSION['user_id']);
   if($res['msg'][0] == SUCCESS) {
     $row = $res['data']->fetch_row();
     $x = $row[0];
@@ -99,8 +99,8 @@ function ExitRoom($data) {
     else {
       // Update user_details and report success
       $new_room = $res['data']->fetch_row()[0];
-      $q = "UPDATE user_details SET current_room_id=$new_room WHERE user_id=" . $_SESSION['user_id'];
-      $res = OkolinaDB::query($q);
+      $q = "UPDATE user_details SET current_room_id=$new_room WHERE user_id=?";
+      $res = OkolinaDB::query($q, $_SESSION['user_id']);
       if ($res['msg'][0] == SUCCESS) return array(
         'msg' => array(SUCCESS, 'room_updated')
       );
