@@ -5,23 +5,228 @@
  * with the id #okolina-content on whatever page it is included on.
  ******************************************************************************/
 
-(function() {
+;(function() {
 
 
-/**
+/*******************************************************************************
  * CONSTANTS
- */
+ ******************************************************************************/
 
+const OKOLINA_DIV_ID = 'okolina-content';
 const OKOLINA_HEIGHT = 500;
 const OKOLINA_WIDTH = 800;
 const PLAY_AREA_WIDTH = 600;
 const CONTROL_AREA_WIDTH = 200;
 
+/*******************************************************************************
+ * OBJECT PROTOTYPE DEFINITIONS
+ ******************************************************************************/
+
+/***********
+ * Drawable
+ ***********/
+function Drawable(src, z = 0) {
+  this.z = z;
+  this.changed = true;
+  this.img = new Image();
+  this.img.src = src;
+  this.img.onload = (function() { this.changed = true; }).bind(this);
+};
 
 /**
- * GLOBALS
+ * draw function
+ *
+ * @param ctx: the context to draw to
  */
+Drawable.prototype.draw = function(ctx) {
+  // Replace in inherited objects
+  this.changed = false;
+};
 
+/**
+ * Has this object changed since the last draw?
+ *
+ * @param ctx: the context to draw to
+ */
+Drawable.prototype.hasChanged = function() {
+  return this.changed;
+};
+
+/**
+ * setZIndex
+ */
+Drawable.prototype.setZIndex = function(z) {
+  this.z = z;
+};
+
+/**********
+ * SPRITE
+ **********/
+function Sprite(src, z = 0, x = 0, y = 0) {
+  Drawable.call(this, src, z);
+  this.x = x;
+  this.y = y;
+};
+Sprite.prototype = Object.create(Drawable.prototype);
+
+/**
+ * draw function
+ */
+Sprite.prototype.draw = function(ctx) {
+  ctx.drawImage(this.img, this.x, this.y);
+  this.changed = false;
+};
+
+/**
+ * Change position
+ */
+Sprite.prototype.setPosition = function(x, y) {
+  this.x = x;
+  this.y = y;
+  this.changed = true;
+};
+
+/**********
+ * TILESET
+ **********/
+function Tileset(
+  src, z = 0,
+  start_x = 0, start_y = 0, offset_width, offset_height, draw_width, draw_height,
+  tileset_start_x, tileset_start_y, tileset_offset_width, tileset_offset_height, tile_width, tile_height,
+  tileset_width
+) {
+  Drawable.call(this, src, z);
+
+  this.start_x = start_x;                               // Where to start drawing the tiles on screen
+  this.start_y = start_y;
+  this.offset_width = offset_width;                     // How much to offset one tile from another
+  this.offset_height = offset_height;
+  this.draw_width = draw_width;                         // The actual size of the tile as drawn on screen
+  this.draw_height = draw_height;
+
+  this.tileset_start_x = tileset_start_x;               // Where the tiles start in the source image
+  this.tileset_start_y = tileset_start_y;
+  this.tileset_offset_width = tileset_offset_width;     // How much tiles are offset from each other in source image
+  this.tileset_offset_height = tileset_offset_height;
+  this.tile_width = tile_width;                         // Actual size of the tiles in the source image
+  this.tile_height = tile_height;
+  this.tileset_width = tileset_width;                   // Number of tiles in a row
+
+  this.tileDataLoaded = false;
+  this.tileData = [];
+};
+Tileset.prototype = Object.create(Drawable.prototype);
+
+Tileset.prototype.loadTileData = function(data = [], layout_width) {
+  this.data = data;
+  this.layout_width = layout_width;
+  this.tileDataLoaded = true;
+  this.changed = true;
+}
+
+Tileset.prototype.draw = function(ctx) {
+  if (this.tileDataLoaded) {
+    var j = 0;
+    var k = 0;
+    this.data.forEach(function(t, i) {
+      ctx.drawImage(
+        this.img,
+        (this.tileset_start_x + ((t % this.tileset_width) * this.tileset_offset_width)),
+        (this.tileset_start_y + (Math.floor(t / this.tileset_width) * this.tileset_offset_height)),
+        this.tile_width, this.tile_height,
+        (this.start_x + ((i % this.layout_width) * this.offset_width)),
+        (this.start_y + ((Math.floor(i / this.layout_width)) * this.offset_height)),
+        this.draw_width, this.draw_height
+      );
+    }, this);
+  }
+}
+
+Tileset.prototype.setTileScale = function(offset_width, offset_height, draw_width, draw_height) {
+  this.offset_width = offset_width;
+  this.offset_height = offset_height;
+  this.draw_width = draw_width;
+  this.draw_height = draw_height;
+}
+
+/**************
+ * DrawManager
+ **************/
+function DrawManager(baseDiv, width, height) {
+  this.objects = [];
+  this.canvas = [];
+  this.ctx = [];
+  this.width = width;
+  this.height = height;
+
+  this.container = document.createElement('div');
+  this.container.style.position = 'relative';
+
+  baseDiv.appendChild(this.container);
+
+  requestAnimationFrame(DrawManager.prototype.step.bind(this));
+};
+
+/**
+ * The draw step - performed every frame
+ *
+ * @param t: Current time returned by requestAnimationFrame
+ */
+DrawManager.prototype.step = function(t) {
+  requestAnimationFrame(DrawManager.prototype.step.bind(this));
+
+  // Draw Objects
+  this.objects.forEach(function(layer, layer_index) {
+    // Check for changes in layer
+    var something_changed = false;
+    for (var obj_index = 0; obj_index < layer.length; obj_index++) {
+      if (layer[obj_index].hasChanged()) {
+        something_changed = true;
+        break;
+      }
+    }
+
+    if (something_changed) {
+      // Clear area
+      this.ctx[layer_index].clearRect(0, 0, this.width, this.height);
+      // Actually draw objects
+      layer.forEach(function(object) {
+         object.draw(this.ctx[layer_index]);
+      }, this);
+    }
+  }, this);
+};
+
+/**
+ * Add an object to the list to be drawn
+ *
+ * @param obj: Object of type Drawable
+ */
+DrawManager.prototype.addObject = function(obj, layer) {
+ if (this.objects[layer] === undefined) {
+   this.objects[layer] = [];
+
+   var newCanvas = document.createElement('canvas');
+   newCanvas.width = this.width;
+   newCanvas.height = this.height;
+   newCanvas.style.position = 'absolute';
+   newCanvas.style.top = '0';
+   newCanvas.style.left = '0';
+
+   this.container.appendChild(newCanvas);
+   this.canvas[layer] = newCanvas;
+   this.ctx[layer] = newCanvas.getContext('2d');
+ }
+ this.objects[layer].push(obj);
+};
+
+/*******************************************************************************
+ * GLOBAL OKOLINA OBJECTS
+ ******************************************************************************/
+
+/**
+ * Okolina - general container object
+ */
 var Okolina = {};
 
 
@@ -38,7 +243,7 @@ function okolinaSetup() {
   Okolina.user = '';
 
   // Page Setup
-  Okolina.divMain = document.getElementById('okolina-content');
+  Okolina.divMain = document.getElementById(OKOLINA_DIV_ID);
   Okolina.divMain.style.width = OKOLINA_WIDTH + 'px';
   Okolina.divMain.style.height = OKOLINA_HEIGHT + 'px';
   Okolina.divMain.style.margin = '0 auto';
@@ -71,12 +276,11 @@ function Login() {
 
 /* Setup play area */
 function GameSetup() {
-  Okolina.PlayArea = document.createElement('canvas');
-  Okolina.PlayArea.width = PLAY_AREA_WIDTH;
-  Okolina.PlayArea.height = OKOLINA_HEIGHT;
+  Okolina.PlayArea = document.createElement('div');
+  Okolina.PlayArea.style.width = PLAY_AREA_WIDTH + 'px';
+  Okolina.PlayArea.style.height = OKOLINA_HEIGHT + 'px';
   Okolina.PlayArea.style.float = 'left';
   Okolina.PlayArea.style.backgroundColor = '#003';
-  Okolina.ctx = Okolina.PlayArea.getContext('2d');
 
   Okolina.divControlArea = document.createElement('div');
   Okolina.divControlArea.style.float = 'left';
@@ -110,18 +314,23 @@ function GameSetup() {
   Okolina.divMain.appendChild(Okolina.PlayArea);
   Okolina.divMain.appendChild(Okolina.divControlArea);
 
-  // Set initial color for room
+  // Set initial room
   Okolina.room = {};
-  Okolina.room.color = '#ffffff';
 
-  // Load tiles
-  Okolina.tiles = new Image();
-  Okolina.tiles.src = 'img/tiles.svg';
+  // Draw DrawManager
+  Okolina.draw = new DrawManager(Okolina.PlayArea, PLAY_AREA_WIDTH, OKOLINA_HEIGHT);
+
+  // Add drawing objects
+  Okolina.tiles1 = new Tileset(
+    'img/tiles.svg', 0,
+    15, 15, 24, 24, 24, 36,
+    0, 0, 96, 128, 64, 96,
+    3
+  );
+  Okolina.draw.addObject(Okolina.tiles1, 0);
 
   // Start game loop
   setTimeout(LoadRoom);
-  // Start draw loop
-  requestAnimationFrame(DrawStep);
 }
 
 /* Load Room */
@@ -130,13 +339,24 @@ function LoadRoom() {
   AJAXRequest('get_room', {},
     function(result) {
       console.log(result['data']);
-      Okolina.room.color = result['data'].color;
       Okolina.room.x = result['data'].x_pos;
       Okolina.room.y = result['data'].y_pos;
       Okolina.room.width = result['data'].room_width;
       Okolina.room.height = result['data'].room_height;
       Okolina.room.data = result['data'].room_data;
       Okolina.room.biome = result['data'].biome;
+
+      Okolina.tiles1.loadTileData(Okolina.room.data, Okolina.room.width);
+      var t_size = 32;
+      var eff_w = PLAY_AREA_WIDTH - 30;
+      var eff_h = OKOLINA_HEIGHT - 30;
+      if((Okolina.room.width / Okolina.room.height) > (eff_w / eff_h)) {
+        t_size = eff_w / Okolina.room.width;
+      }
+      else {
+        t_size = eff_h / Okolina.room.height;
+      }
+      Okolina.tiles1.setTileScale(t_size, t_size, t_size, t_size * 1.5);
     },
     function(result) {
       console.log(result['data']);
@@ -162,55 +382,6 @@ function GameCleanup() {
 
   // Return to the login screen
   setTimeout(Login);
-}
-
-/* Draw Step */
-function DrawStep(t) {
-  requestAnimationFrame(DrawStep);
-
-  // Draw rectangle
-  Okolina.ctx.clearRect(0, 0, PLAY_AREA_WIDTH, OKOLINA_HEIGHT);
-
-  // Draw tiles
-  function drawTile(tileX, tileY, tileSize, x, y, offsetX, offsetY) {
-    Okolina.ctx.drawImage(
-      Okolina.tiles,
-      (tileX * 96), (tileY * 128),
-      64, 96,
-      (offsetX + (x * tileSize)), (offsetY + (y * tileSize)),
-      tileSize, (1.5 * tileSize)
-    );
-  }
-
-  // Calc scale and offset
-  var margin = OKOLINA_HEIGHT * 0.05;
-  var offx, offy;
-  var eff_width = PLAY_AREA_WIDTH - (2 * margin);
-  var eff_height = OKOLINA_HEIGHT - (2 * margin);
-  var s;
-  if ((Okolina.room.width / Okolina.room.height) > (eff_width / eff_height)) {
-    s = eff_width / Okolina.room.width;
-    offx = margin;
-    offy = (OKOLINA_HEIGHT - (Okolina.room.height * s)) / 2;
-  }
-  else {
-    s = eff_height / Okolina.room.height;
-    offx = (PLAY_AREA_WIDTH - (Okolina.room.width * s)) / 2;
-    offy = margin;
-  }
-  for (var j = 0; j < Okolina.room.width; j++) {
-    for (var k = 0; k < Okolina.room.height; k++) {
-      drawTile(Okolina.room.data[j + (k * Okolina.room.width)], 0, s, j, k, offx, offy);
-    }
-  }
-
-  // Draw text
-  Okolina.ctx.fillStyle = 'white';
-  Okolina.ctx.font = '25px monospace';
-  Okolina.ctx.fillText(
-    'Coordinates: (' + Okolina.room.x + ', ' + Okolina.room.y + ')',
-    25, OKOLINA_HEIGHT - 15
-  );
 }
 
 /**
