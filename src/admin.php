@@ -11,8 +11,8 @@
 /**
  * INCLUDES
  */
-require_once('inc/db_access.php');
-require_once('inc/constants.php');
+require_once('php/db_access.php');
+require_once('php/constants.php');
 
 
 /**
